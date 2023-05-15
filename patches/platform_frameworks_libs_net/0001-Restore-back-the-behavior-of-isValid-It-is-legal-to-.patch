@@ -1,0 +1,65 @@
+From a4ba794cd591b739b901a5bb0c6826437682550e Mon Sep 17 00:00:00 2001
+From: Pierre-Hugues Husson <phh@phh.me>
+Date: Wed, 26 Oct 2022 18:02:18 -0400
+Subject: [PATCH] Restore back the behavior of isValid(): It is legal to have
+ non-working BpfMap. Dont abort a whole process (system_server...) just
+ because we cant access bpf map. Also add isOk to include the additional
+ checks for newer kernel versions
+
+Change-Id: Ie7815c186400614f0c6b483c04aa8971af348380
+---
+ .../bpf_headers/include/bpf/.BpfMap.h.rej.swp  | Bin 0 -> 1024 bytes
+ common/native/bpf_headers/include/bpf/BpfMap.h |  17 ++++++++++-------
+ 2 files changed, 10 insertions(+), 7 deletions(-)
+ create mode 100644 common/native/bpf_headers/include/bpf/.BpfMap.h.rej.swp
+
+diff --git a/common/native/bpf_headers/include/bpf/.BpfMap.h.rej.swp b/common/native/bpf_headers/include/bpf/.BpfMap.h.rej.swp
+new file mode 100644
+index 0000000000000000000000000000000000000000..1e1194d9500b3aa143d86b02e123e67a82008d61
+GIT binary patch
+literal 1024
+zcmeH@F%H5&3<Sd?=-~rrM8N~-c>}T&TRF(tCtnhj-y_i_N=1F!?X0xL&_z-0bPLyJ
+zmE-x)$mG5VC$eR=Z3~hSZsATB$HX7=cYz^N0p$?_w3d=7D2{Pvpe)axv12a~wH>DJ
+X$KamjfjRWS`L%OhQ8iEv{9)h=!9XOu
+
+literal 0
+HcmV?d00001
+
+diff --git a/common/native/bpf_headers/include/bpf/BpfMap.h b/common/native/bpf_headers/include/bpf/BpfMap.h
+index 51e6d16..79de9bd 100644
+--- a/common/native/bpf_headers/include/bpf/BpfMap.h
++++ b/common/native/bpf_headers/include/bpf/BpfMap.h
+@@ -53,13 +53,7 @@ class BpfMap {
+     BpfMap<Key, Value>(const BpfMap<Key, Value>&) = delete;
+ 
+   private:
+-    void abortOnKeyOrValueSizeMismatch() {
+-        if (!mMapFd.ok()) abort();
+-        if (isAtLeastKernelVersion(4, 14, 0)) {
+-            if (bpfGetFdKeySize(mMapFd) != sizeof(Key)) abort();
+-            if (bpfGetFdValueSize(mMapFd) != sizeof(Value)) abort();
+-        }
+-    }
++    void abortOnKeyOrValueSizeMismatch() {};
+ 
+   protected:
+     // flag must be within BPF_OBJ_FLAG_MASK, ie. 0, BPF_F_RDONLY, BPF_F_WRONLY
+@@ -69,6 +63,15 @@ class BpfMap {
+     }
+ 
+   public:
++    bool isOk() {
++        if (mMapFd < 0) return false;
++        if (isAtLeastKernelVersion(4, 14, 0)) {
++            if (bpfGetFdKeySize(mMapFd) != sizeof(Key)) return false;
++            if (bpfGetFdValueSize(mMapFd) != sizeof(Value)) return false;
++        }
++        return true;
++    }
++
+     explicit BpfMap<Key, Value>(const char* pathname) : BpfMap<Key, Value>(pathname, 0) {}
+ 
+ #ifdef BPF_MAP_MAKE_VISIBLE_FOR_TESTING
+-- 
+2.34.1
+

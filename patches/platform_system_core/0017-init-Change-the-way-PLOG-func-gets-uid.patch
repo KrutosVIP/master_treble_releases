@@ -1,0 +1,26 @@
+From e86173bacc18cfa423789e13e5344c048fb89fda Mon Sep 17 00:00:00 2001
+From: KrutosVIP <52695559+KrutosVIP@users.noreply.github.com>
+Date: Mon, 15 May 2023 09:33:19 +0000
+Subject: [PATCH 17/17] init: Change the way PLOG func gets uid
+
+Change-Id: I0bbc96a0d31bce21026e8d4d952c1d0bb35748ac
+---
+ init/service.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/init/service.cpp b/init/service.cpp
+index 9b2ddd4..a0ee353 100644
+--- a/init/service.cpp
++++ b/init/service.cpp
+@@ -708,7 +708,7 @@ Result<void> Service::Start() {
+                          limit_percent_ != -1 || !limit_property_.empty();
+         errno = -createProcessGroup(uid(), pid_, use_memcg);
+         if (errno != 0) {
+-            PLOG(ERROR) << "createProcessGroup(" << proc_attr_.uid << ", " << pid_ <<  ") failed for service '" << name_ << "'";
++            PLOG(ERROR) << "createProcessGroup(" << uid() << ", " << pid_ <<  ") failed for service '" << name_ << "'";
+ 
+ #if 0
+             Result<void> result = cgroups_activated.Write(kActivatingCgroupsFailed);
+-- 
+2.34.1
+
